@@ -1,4 +1,3 @@
-# Generated manually to add DRAFT status choice
 from django.db import migrations, models
 
 
