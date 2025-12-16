@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from advertisements.models import Advertisement, AdvertisementStatusChoices
+from advertisements.models import Advertisement, AdvertisementStatusChoices, Favorite
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,11 +19,12 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     creator = UserSerializer(
         read_only=True,
     )
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Advertisement
         fields = ('id', 'title', 'description', 'creator',
-                  'status', 'created_at', )
+                  'status', 'created_at', 'is_favorited')
 
     def create(self, validated_data):
         """Метод для создания"""
@@ -66,3 +67,11 @@ class AdvertisementSerializer(serializers.ModelSerializer):
                 )
 
         return data
+
+    def get_is_favorited(self, obj):
+        """Флаг, добавлено ли объявление в избранное текущего пользователя."""
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return False
+        return Favorite.objects.filter(advertisement=obj, user=user).exists()
